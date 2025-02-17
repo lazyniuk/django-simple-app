@@ -1,0 +1,69 @@
+name: Deploy to GKE with Terraform and Helm
+
+on:
+  push:
+    branches:
+      - test
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          export_default_credentials: true
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        run: |
+          terraform apply -auto-approve \
+            -var "project_id=${{ secrets.GCP_PROJECT }}" \
+            -var "region=${{ secrets.GCP_REGION }}" \
+            -var "cluster_name=${{ secrets.CLUSTER_NAME }}"
+      
+      - name: Build and Push Docker Image
+        run: |
+          cd terraform
+          AR_REPO_URL=$(terraform output -raw artifact_repository_url)
+          cd ..
+
+          IMAGE_NAME="$AR_REPO_URL/simple-app"
+          docker build -t "$IMAGE_NAME:$GITHUB_SHA" .
+
+          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | docker login -u _json_key --password-stdin "https://${AR_REPO_URL}"
+          docker push "$IMAGE_NAME:$GITHUB_SHA"
+
+      - name: Get GKE Credentials
+        run: |
+          gcloud container clusters get-credentials "${{ secrets.CLUSTER_NAME || 'simple-app-cluster' }}" \
+            --region "${{ secrets.GCP_REGION }}" \
+            --project "${{ secrets.GCP_PROJECT }}"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.13.3
+
+      - name: Helm Upgrade/Install
+        run: |
+          cd charts/simple-app
+          AR_REPO_URL=$(terraform -chdir=../../terraform output -raw artifact_repository_url)
+          RELEASE_NAME=simple-app
+
+          helm upgrade --install $RELEASE_NAME . \
+            --set image.repository="$AR_REPO_URL/simple-app" \
+            --set image.tag="$GITHUB_SHA" \
+            --set service.type=LoadBalancer
+          cd ../..
