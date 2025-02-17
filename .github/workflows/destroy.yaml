@@ -1,0 +1,29 @@
+name: Destroy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up GCP credentials for Terraform
+        run: echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY_BASE64 }}" | base64 --decode > /tmp/gcp-key.json
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Destroy
+        working-directory: ./terraform
+        run: |
+          terraform destroy -auto-approve \
+            -var "project_id=${{ secrets.GCP_PROJECT }}" \
+            -var "region=${{ secrets.GCP_REGION }}" \
+            -var "cluster_name=${{ secrets.CLUSTER_NAME }}"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
