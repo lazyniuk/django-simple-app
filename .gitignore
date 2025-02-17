@@ -1,0 +1,63 @@
+# ------------------------------
+#  Python / Django
+# ------------------------------
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyo
+
+# Django local database (if using SQLite)
+db.sqlite3
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Pytest cache
+.pytest_cache/
+
+# MyPy cache
+.mypy_cache/
+
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+
+# Editors / IDEs
+.vscode/
+.idea/
+
+# Environment variable files (secrets)
+*.env
+
+# ------------------------------
+#  Terraform
+# ------------------------------
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Local-only override files
+*.tfvars
+*.tfvars.json
+
+# ------------------------------
+#  Helm
+# ------------------------------
+# Ignore packaged Helm charts
+*.tgz
+
+# ------------------------------
+#  Other OS/Tooling
+# ------------------------------
+.DS_Store     # macOS
+Thumbs.db     # Windows
