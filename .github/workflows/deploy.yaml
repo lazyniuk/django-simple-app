@@ -19,6 +19,10 @@ jobs:
           service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           export_default_credentials: true
 
+      - name: Configure Docker Authentication for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
       - name: Set up GCP credentials for Terraform
         run: echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY_BASE64 }}" | base64 --decode > /tmp/gcp-key.json
         env:
@@ -52,7 +56,7 @@ jobs:
           IMAGE_NAME="$AR_REPO_URL/simple-app"
           docker build -t "$IMAGE_NAME:$GITHUB_SHA" .
 
-          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | docker login -u _json_key --password-stdin "https://${AR_REPO_URL}"
+          # docker login -u _json_key --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev < /tmp/gcp-key.json
           docker push "$IMAGE_NAME:$GITHUB_SHA"
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
