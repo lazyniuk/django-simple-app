@@ -21,32 +21,37 @@ resource "google_artifact_registry_repository" "repo" {
 }
 
 resource "google_container_cluster" "primary" {
-  name                     = var.cluster_name
-  location                 = var.region
-  remove_default_node_pool = true
-  initial_node_count       = 1
-  networking_mode          = "VPC_NATIVE"
+  name               = var.cluster_name
+  location           = var.region
+  initial_node_count = 1
+  networking_mode    = "VPC_NATIVE"
 
-  ip_allocation_policy {
-    #use_ip_aliases = true
-  }
-}
-
-
-resource "google_container_node_pool" "primary_nodes" {
-  name       = "${var.cluster_name}-node-pool"
-  location   = var.region
-  cluster    = google_container_cluster.primary.name
-  node_count = 1
+  ip_allocation_policy {}
 
   node_config {
     machine_type = "e2-medium"
-    disk_size_gb = 50
+    disk_size_gb = 50  # Reduced disk size per node.
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
 }
+
+
+# resource "google_container_node_pool" "primary_nodes" {
+#   name       = "${var.cluster_name}-node-pool"
+#   location   = var.region
+#   cluster    = google_container_cluster.primary.name
+#   node_count = 1
+
+#   node_config {
+#     machine_type = "e2-medium"
+#     disk_size_gb = 50
+#     oauth_scopes = [
+#       "https://www.googleapis.com/auth/cloud-platform"
+#     ]
+#   }
+# }
 
 
 data "google_container_cluster" "cluster_data" {
