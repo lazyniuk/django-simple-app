@@ -18,12 +18,19 @@ jobs:
           service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           export_default_credentials: true
 
+      - name: Set up GCP credentials for Terraform
+        run: echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" > /tmp/gcp-key.json
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+        
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
 
       - name: Terraform Apply
         working-directory: ./terraform
@@ -32,6 +39,8 @@ jobs:
             -var "project_id=${{ secrets.GCP_PROJECT }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "cluster_name=${{ secrets.CLUSTER_NAME }}"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
       
       - name: Build and Push Docker Image
         run: |
